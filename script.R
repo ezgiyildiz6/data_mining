@@ -1,17 +1,67 @@
 source("require_packages.R")
 require_packages(c(
   "xml2",
-  "httr"
+  "httr",
+  "tidytext",
+  "magrittr",
+  "dplyr",
+  "readr",
+  "tidyr",
+  "ggplot2",
+  "wordcloud"
 ))
 
 
 # HTTP GET Request
-a <- GET("https://github.com/skamper1/GitHub-Actions-R-Template")
+cnn_rss <- GET("http://rss.cnn.com/rss/cnn_latest.rss")
+writeLines(content(cnn_rss, as = "text"), "myxml.xml")
 
-html <- read_html(rawToChar(a$content))
 
-forks_counter_element <- xml_find_first(html, ".//span[@id='repo-network-counter']")
+my_doc <- read_xml("myxml.xml")
 
-forks_counter <- xml_integer(forks_counter_element)
+xml_structure(my_doc)
 
-forks_counter |>  as.character() |> paste(Sys.time()) |> writeLines(format(Sys.Date(), "%m-%Y.txt"))
+xml_find_all(my_doc, ".//item")
+number_of_items <- length(xml_find_all(my_doc, ".//item"))
+news <- number_of_items
+lastBuildDate <- xml_find_all(my_doc, ".//lastBuildDate")
+last_build_date <- xml_text(lastBuildDate)
+cat("There are",news,"news on CNN World RSS feed on",last_build_date,".")
+
+description <- xml_find_all(my_doc, ".//description")
+content_of_the_news <- xml_text(description[-1])
+content_of_the_news
+
+# Creating a data frame with the descriptions
+description_numbers <- seq(1,number_of_items)
+description_dataframe <- data.frame(description_number = description_numbers, 
+                                    text = content_of_the_news)
+
+#Tokenisation of the file
+(tokenised <- description_dataframe %>% unnest_tokens(token, text))
+(word_counts <- tokenised %>% 
+    count(token))
+
+################################################################################
+#Sentiment analysis - NRC
+nrc <- get_sentiments("nrc")
+nrc %>%  count(sentiment)
+nrc %>% write_csv("nrc.csv")
+nrc <- read_csv("nrc.csv")
+
+nrc_sentiment_counts <- nrc %>%
+  inner_join(word_counts, by = c("word" = "token")) %>% 
+  group_by(sentiment) %>%
+  summarise(n = sum(n))
+
+nrc_graph <- nrc_sentiment_counts %>% 
+  ggplot(aes(x = sentiment, y = n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) + 
+  labs(title = "Frequency of NRC sentiments in CNN World RSS feed URL")
+print(nrc_graph)
+
+################################################################################
+#Word Cloud
+word_count <- tokenised %>% unnest(token) %>% count(token)
+top_100 <- top_n(word_count, 100 , wt = n)
+wordcloud(top_100$token, top_100$n)
