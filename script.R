@@ -44,11 +44,6 @@ description_dataframe <- data.frame(description_number = description_numbers,
 
 ################################################################################
 #Sentiment analysis - NRC
-nrc <- get_sentiments("nrc")
-nrc %>%  count(sentiment)
-nrc %>% write_csv("nrc.csv")
-nrc <- read_csv("nrc.csv")
-
 nrc_sentiment_counts <- nrc %>%
   inner_join(word_counts, by = c("word" = "token")) %>% 
   group_by(sentiment) %>%
