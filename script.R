@@ -19,8 +19,6 @@ writeLines(content(cnn_rss, as = "text"), "myxml.xml")
 
 my_doc <- read_xml("myxml.xml")
 
-xml_structure(my_doc)
-
 xml_find_all(my_doc, ".//item")
 number_of_items <- length(xml_find_all(my_doc, ".//item"))
 news <- number_of_items
@@ -44,6 +42,7 @@ description_dataframe <- data.frame(description_number = description_numbers,
 
 ################################################################################
 #Sentiment analysis - NRC
+nrc <- read_csv("nrc.csv")
 nrc_sentiment_counts <- nrc %>%
   inner_join(word_counts, by = c("word" = "token")) %>% 
   group_by(sentiment) %>%
