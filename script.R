@@ -52,10 +52,8 @@ nrc_graph <- nrc_sentiment_counts %>%
   ggplot(aes(x = sentiment, y = n, fill = sentiment)) +
   geom_col(show.legend = FALSE) + 
   labs(title = "Frequency of NRC sentiments in CNN World RSS feed URL")
-print(nrc_graph)
 
 ################################################################################
-#Word Cloud
-word_count <- tokenised %>% unnest(token) %>% count(token)
-top_100 <- top_n(word_count, 100 , wt = n)
-wordcloud(top_100$token, top_100$n)
+nrc_sentiment_counts |> write_csv(format(Sys.Date(), "%Y-Week-%V-%u.csv"))
+
+writeLines(format(Sys.time()), "timestamp.txt")
